@@ -5,15 +5,13 @@ import com.example.userservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
-@SpringBootApplication
-public class App implements CommandLineRunner {
+public class ConsoleApp implements CommandLineRunner {
 
     @Autowired
     private UserRepository userRepository;
@@ -21,7 +19,7 @@ public class App implements CommandLineRunner {
     private final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        SpringApplication.run(App.class, args);
+        SpringApplication.run(ConsoleApp.class, args);
     }
 
     @Override
