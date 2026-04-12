@@ -1,34 +1,20 @@
-package com.example.userservice.model;
-
-import jakarta.persistence.*;
-import org.springframework.stereotype.Component;
+package com.example.userservice.dto;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserResponseDto {
     private Long id;
-
     private String name;
     private String email;
     private Integer age;
-
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public User() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public User(String name, String email, Integer age) {
+    public UserResponseDto(Long id, String name, String email, Integer age, LocalDateTime createdAt) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.age = age;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
     }
 
     public Long getId() { return id; }
@@ -45,15 +31,4 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", age=" + age +
-                ", createdAt=" + createdAt +
-                '}';
-    }
 }

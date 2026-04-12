@@ -1,21 +1,32 @@
 package com.example.userservice;
 
-import com.example.userservice.dao.UserDao;
 import com.example.userservice.model.User;
-import com.example.userservice.util.HibernateUtil;
-import org.hibernate.SessionFactory;
+import com.example.userservice.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
-public class App {
+public class ConsoleApp implements CommandLineRunner {
 
-    private static final UserDao userDao = new UserDao(HibernateUtil.getSessionFactory());
-    private static final Scanner scanner = new Scanner(System.in);
+    @Autowired
+    private UserRepository userRepository;
+
+    private final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+        SpringApplication.run(ConsoleApp.class, args);
+    }
+
+    @Override
+    @Transactional
+    public void run(String... args) {
         while (true) {
-            System.out.println("\n--- User Service ---");
+            System.out.println("\nUser Service");
             System.out.println("1. Создать пользователя");
             System.out.println("2. Список пользователей");
             System.out.println("3. Найти пользователя по ID");
@@ -31,16 +42,13 @@ public class App {
                 case "3" -> getUserById();
                 case "4" -> updateUser();
                 case "5" -> deleteUser();
-                case "0" -> {
-                    HibernateUtil.shutdown();
-                    System.exit(0);
-                }
-                default -> System.out.println("неверный выбор");
+                case "0" -> System.exit(0);
+                default -> System.out.println("incorrect");
             }
         }
     }
 
-    private static void createUser() {
+    private void createUser() {
         System.out.print("Имя: ");
         String name = scanner.nextLine();
         System.out.print("Почта: ");
@@ -49,36 +57,35 @@ public class App {
         int age = Integer.parseInt(scanner.nextLine());
 
         User user = new User(name, email, age);
-        userDao.create(user);
-        System.out.println("Пользователь создан: " + user);
+        User saved = userRepository.save(user);
+        System.out.println("Пользователь создан: " + saved);
     }
 
-    private static void listUsers() {
-        List<User> users = userDao.readAll();
-        if (users != null) {
-            users.forEach(System.out::println);
-        }
+    private void listUsers() {
+        List<User> users = userRepository.findAll();
+        users.forEach(System.out::println);
     }
 
-    private static void getUserById() {
+    private void getUserById() {
         System.out.print("ID пользователя: ");
         long id = Long.parseLong(scanner.nextLine());
-        User user = userDao.read(id);
-        if (user != null) {
-            System.out.println(user);
+        Optional<User> user = userRepository.findById(id);
+        if (user.isPresent()) {
+            System.out.println(user.get());
         } else {
             System.out.println("Не найден");
         }
     }
 
-    private static void updateUser() {
-        System.out.print("Пользователь: ");
+    private void updateUser() {
+        System.out.print("ID пользователя: ");
         long id = Long.parseLong(scanner.nextLine());
-        User user = userDao.read(id);
-        if (user == null) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
             System.out.println("Не найден");
             return;
         }
+        User user = optionalUser.get();
 
         System.out.print("Новое имя (" + user.getName() + "): ");
         String name = scanner.nextLine();
@@ -91,14 +98,18 @@ public class App {
         if (!email.isEmpty()) user.setEmail(email);
         if (!ageStr.isEmpty()) user.setAge(Integer.parseInt(ageStr));
 
-        userDao.update(user);
+        userRepository.save(user);
         System.out.println("Обновлен: " + user);
     }
 
-    private static void deleteUser() {
-        System.out.print("Введите номер пользователя: ");
+    private void deleteUser() {
+        System.out.print("ID пользователя: ");
         long id = Long.parseLong(scanner.nextLine());
-        userDao.delete(id);
-        System.out.println("Удален");
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            System.out.println("Удален");
+        } else {
+            System.out.println("Не найден");
+        }
     }
 }
