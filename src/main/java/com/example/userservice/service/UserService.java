@@ -3,8 +3,7 @@ package com.example.userservice.service;
 import com.example.userservice.dto.CreateUserDto;
 import com.example.userservice.dto.UpdateUserDto;
 import com.example.userservice.dto.UserResponseDto;
-import com.example.userservice.event.UserCreatedEvent;
-import com.example.userservice.event.UserDeletedEvent;
+import com.example.event.UserEvent;
 import com.example.userservice.model.User;
 import com.example.userservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +47,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         return toDto(user);
     }
 
@@ -57,8 +56,7 @@ public class UserService {
         User user = new User(dto.getName(), dto.getEmail(), dto.getAge());
         User saved = userRepository.save(user);
 
-        UserCreatedEvent event =
-                new UserCreatedEvent(saved.getId(), saved.getEmail(), saved.getName());
+        UserEvent event = new UserEvent(saved.getId(), saved.getEmail(), saved.getName(), "Create");
 
         kafkaTemplate.send("user-created", event);
 
@@ -69,7 +67,7 @@ public class UserService {
     @Transactional
     public UserResponseDto updateUser(Long id, UpdateUserDto dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         if (dto.getName() != null) user.setName(dto.getName());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getAge() != null) user.setAge(dto.getAge());
@@ -78,14 +76,18 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
+
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         userRepository.deleteById(id);
 
-        UserDeletedEvent event =
-                new UserDeletedEvent(user.getId(), user.getEmail(), user.getName());
+        UserEvent event = new UserEvent(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                "Delete"
+        );
 
-        kafkaTemplate.send("user-deleted", event);
-    }
-}
+        kafkaTemplate.send("user-events-v2", event);
+    }}
